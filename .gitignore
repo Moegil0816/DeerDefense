@@ -1,0 +1,11 @@
+# Virtual environment
+.venv/
+
+# Python cache
+__pycache__/
+*.pyc
+
+# Images/videos created by the app
+images/
+videos/
+logs/
