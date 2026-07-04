@@ -3,6 +3,8 @@ import depthai as dai
 
 
 class OakCamera:
+    """Simple OAK-D camera wrapper using DepthAI v3."""
+
     def __init__(self, width=640, height=360):
         self.width = width
         self.height = height
@@ -15,7 +17,7 @@ class OakCamera:
         cam = self.pipeline.create(dai.node.Camera).build()
         output = cam.requestOutput(
             (self.width, self.height),
-            type=dai.ImgFrame.Type.BGR888i
+            type=dai.ImgFrame.Type.BGR888i,
         )
 
         self.queue = output.createOutputQueue()
