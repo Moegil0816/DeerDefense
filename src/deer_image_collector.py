@@ -16,50 +16,49 @@ camera.start()
 prev_gray = None
 last_save = 0
 
-print("Deer image collector running. Press q to quit.")
+print("Deer image collector running in headless mode.")
 
-while camera.is_running():
-    frame = camera.get_frame()
+try:
+    while camera.is_running():
+        frame = camera.get_frame()
 
-    gray = cv2.cvtColor(frame, cv2.COLOR_BGR2GRAY)
-    gray = cv2.GaussianBlur(gray, (21, 21), 0)
+        gray = cv2.cvtColor(frame, cv2.COLOR_BGR2GRAY)
+        gray = cv2.GaussianBlur(gray, (21, 21), 0)
 
-    if prev_gray is None:
-        prev_gray = gray
-        continue
-
-    diff = cv2.absdiff(prev_gray, gray)
-    thresh = cv2.threshold(diff, 25, 255, cv2.THRESH_BINARY)[1]
-    thresh = cv2.dilate(thresh, None, iterations=2)
-
-    contours, _ = cv2.findContours(
-        thresh, cv2.RETR_EXTERNAL, cv2.CHAIN_APPROX_SIMPLE
-    )
-
-    motion_detected = False
-
-    for contour in contours:
-        if cv2.contourArea(contour) < MIN_AREA:
+        if prev_gray is None:
+            prev_gray = gray
             continue
 
-        motion_detected = True
-        x, y, w, h = cv2.boundingRect(contour)
-        cv2.rectangle(frame, (x, y), (x + w, y + h), (0, 255, 0), 2)
+        diff = cv2.absdiff(prev_gray, gray)
+        thresh = cv2.threshold(diff, 25, 255, cv2.THRESH_BINARY)[1]
+        thresh = cv2.dilate(thresh, None, iterations=2)
 
-    now = time.time()
+        contours, _ = cv2.findContours(
+            thresh, cv2.RETR_EXTERNAL, cv2.CHAIN_APPROX_SIMPLE
+        )
 
-    if motion_detected and now - last_save >= SAVE_COOLDOWN:
-        filename = datetime.now().strftime("capture_%Y%m%d_%H%M%S.jpg")
-        path = os.path.join(SAVE_DIR, filename)
-        cv2.imwrite(path, frame)
-        print(f"Saved {path}")
-        last_save = now
+        motion_detected = False
 
-    cv2.imshow("Deer Image Collector", frame)
+        for contour in contours:
+            if cv2.contourArea(contour) < MIN_AREA:
+                continue
 
-    prev_gray = gray
+            motion_detected = True
+            x, y, w, h = cv2.boundingRect(contour)
+            cv2.rectangle(frame, (x, y), (x + w, y + h), (0, 255, 0), 2)
 
-    if cv2.waitKey(1) == ord("q"):
-        break
+        now = time.time()
 
-camera.stop()
+        if motion_detected and now - last_save >= SAVE_COOLDOWN:
+            filename = datetime.now().strftime("capture_%Y%m%d_%H%M%S.jpg")
+            path = os.path.join(SAVE_DIR, filename)
+            cv2.imwrite(path, frame)
+            print(f"Saved {path}")
+            last_save = now
+
+        prev_gray = gray
+except KeyboardInterrupt:
+    print("Stopping deer image collector.")
+finally:
+    if camera.pipeline is not None and camera.pipeline.isRunning():
+        camera.pipeline.stop()
